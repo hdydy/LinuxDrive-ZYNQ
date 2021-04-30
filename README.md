@@ -1,2 +1,2 @@
 # LinuxDrive-ZYNQ
-适配米联客7eg开发板的驱动
+基于米联客MPSOC系列开发板的Linux驱动
