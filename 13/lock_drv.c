@@ -22,7 +22,6 @@
 #include <linux/of_irq.h>
 #include <asm/io.h>
 
-
 #define ZYNQMP_GPIO_NR_GPIOS 174
 #define MIO_PIN_42 (ARCH_NR_GPIOS - ZYNQMP_GPIO_NR_GPIOS + 42)
 
@@ -42,9 +41,9 @@ static irqreturn_t key_handler(int irq, void *dev)
 {
 	char value;
 	value = gpio_get_value(MIO_PIN_42);
-	if (value == 0)
+	if (value == 1)
 	{
-		atomic64_inc(&lock_dev.lock);
+		atomic_set(&lock_dev.lock, 1);
 		wake_up_interruptible(&lock_dev.waitqueue);
 	}
 }
@@ -56,19 +55,9 @@ int lock_open(struct inode *inode, struct file *filp)
 }
 ssize_t lock_read(struct file *filp, char __user *buf, size_t count, loff_t *fops)
 {
-	if (!atomic64_read(&lock_dev.lock))
-	{
-		DECLARE_WAITQUEUE(queue_mem, current);
-		add_wait_queue(&lock_dev.waitqueue, &queue_mem);
-		__set_current_state(TASK_INTERRUPTIBLE);
-		schedule();
-		set_current_state(TASK_RUNNING);
-		remove_wait_queue(&lock_dev.waitqueue, &queue_mem);
-		if(signal_pending(current)){
-			return -ERESTARTSYS;
-		}
-	}
-	copy_to_user(buf,&lock_dev.lock,sizeof(lock_dev.lock));
+	int ret = wait_event_interruptible(lock_dev.waitqueue, atomic64_read(&lock_dev.lock));
+	int key = atomic64_read(&lock_dev.lock);
+	copy_to_user(buf, &key, sizeof(key));
 	atomic_set(&lock_dev.lock, 0);
 	return 0;
 }
@@ -138,7 +127,7 @@ static __init int lock_drv_init(void)
 		return ret;
 	}
 
-	//GPIO口方向设置成输出
+	//GPIO口方向设置成输入
 	ret = gpio_direction_input(MIO_PIN_42);
 	if (ret != 0)
 	{
@@ -149,7 +138,14 @@ static __init int lock_drv_init(void)
 	atomic64_set(&lock_dev.lock, 0);
 
 	lock_dev.irq = gpio_to_irq(MIO_PIN_42);
-	ret = request_irq(lock_dev.irq, key_handler, IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING, "key", NULL);
+	ret = request_irq(lock_dev.irq, key_handler, IRQF_TRIGGER_RISING, "key", NULL);
+	if (ret < 0)
+	{
+		printk("request_irq error!\n");
+		return ret;
+	}
+
+	init_waitqueue_head(&lock_dev.waitqueue);
 
 	return 0;
 }
