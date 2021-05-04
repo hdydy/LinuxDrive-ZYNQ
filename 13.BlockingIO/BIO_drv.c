@@ -5,22 +5,7 @@
 #include <linux/gpio.h>
 #include <linux/uaccess.h>
 #include <linux/atomic.h>
-#include <linux/irq.h>
 #include <linux/interrupt.h>
-
-#include <linux/kernel.h>
-#include <linux/ide.h>
-#include <linux/types.h>
-#include <linux/errno.h>
-#include <linux/of.h>
-#include <linux/of_address.h>
-#include <linux/of_gpio.h>
-#include <linux/device.h>
-#include <linux/delay.h>
-#include <linux/semaphore.h>
-#include <linux/timer.h>
-#include <linux/of_irq.h>
-#include <asm/io.h>
 
 #define ZYNQMP_GPIO_NR_GPIOS 174
 #define MIO_PIN_42 (ARCH_NR_GPIOS - ZYNQMP_GPIO_NR_GPIOS + 42)
