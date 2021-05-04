@@ -7,8 +7,8 @@ export CROSS_COMPILE=aarch64-linux-gnu-
 #当前路径
 CURRENT_DIR = $(shell pwd)
 
-MODULE = lock_drv
-APP = lock_app
+MODULE = BIO_drv
+APP = BIO_app
 
 all : 
 #进入并调用内核源码目录中Makefile的规则, 将当前的目录中的源码编译成模块
