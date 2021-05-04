@@ -11,7 +11,7 @@ int main(void)
 	int i = 0;
 	int a = 0;
 
-	fd = open("/dev/lock_device", O_RDWR);
+	fd = open("/dev/bio_device", O_RDWR);
 	if (fd < 0)
 	{
 		perror("open fail!\n");
