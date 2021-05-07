@@ -10,36 +10,32 @@ int main(void)
 {
 	fd_set readfds;
 	int fd = 0, a = 0, ret = 0;
+	struct timeval timeout;
 
-	fd = open("/dev/nio_device", O_RDWR);
-	if (fd < 0)
-	{
-		perror("open fail!\n");
-		exit(1);
-	}
-
-	FD_ZERO(&readfds);
-	FD_SET(fd, &readfds);
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 0;
 
 	while (1)
 	{
-		ret = select(fd + 1, &readfds, NULL, NULL, NULL);
+		fd = open("/dev/nio_device", O_RDWR);
+		FD_ZERO(&readfds);
+		FD_SET(fd, &readfds);
+		ret = select(fd + 1, &readfds, NULL, NULL, &timeout);
 		switch (ret)
 		{
 		case 0:
-			printf("Time out.");
+			printf("Time out.\n");
 			break;
 		case 1:
 			read(fd, &a, sizeof(a));
 			printf("but1 value %d\n", a);
 			break;
 		default:
-			printf("Unknow error.");
+			printf("Unknow error.\n");
 			break;
 		}
+		close(fd);
+		sleep(1);
 	}
-
-	close(fd);
-
 	return 0;
 }
