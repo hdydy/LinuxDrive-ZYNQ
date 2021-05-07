@@ -47,6 +47,7 @@ int nio_open(struct inode *inode, struct file *filp)
 ssize_t nio_read(struct file *filp, char __user *buf, size_t count, loff_t *fops)
 {
 	int ret = 0, key = 0;
+	//如果读取按键不为1，则返回错误
 	if (atomic64_read(&nio_dev.state) == 0)
 		return -EAGAIN;
 	//上面的队列被唤醒后，读取当前按键状态
@@ -69,6 +70,7 @@ static unsigned int key_poll(struct file *filp, struct poll_table_struct *wait)
 {
 	unsigned int mask = 0;
 
+	//设置poll
 	poll_wait(filp, &nio_dev.waitqueue, wait);
 
 	if (atomic64_read(&nio_dev.state) == 1) // 按键按下或松开动作发生
