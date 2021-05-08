@@ -20,7 +20,7 @@ int main(void)
 	{
 		//select函数会清空它所检测的socket描述符集合
 		//每次调用select()之前都必须把socket描述符重新加入到待检测的集合中
-		fd = open("/dev/nio_device", O_RDWR);
+		fd = open("/dev/nio_device", O_RDWR | O_NONBLOCK);
 		if (fd < 0)
 		{
 			perror("open fail!\n");
