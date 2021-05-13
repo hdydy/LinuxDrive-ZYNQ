@@ -28,51 +28,45 @@ struct aio_device
 static irqreturn_t key_handler(int irq, void *dev_0)
 {
 	char value;
-	struct aio_device *dev = &aio_dev;
 	//读取按键状态，按下为1，松开为0
 	value = gpio_get_value(MIO_PIN_42);
 	if (value == 1) //按下的情况
 	{
 		//设置原子变量为1
-		atomic64_set(&dev->state, 1);
-		printk(KERN_CRIT "key_handler1");
+		atomic64_set(&aio_dev.state, 1);
 		//唤醒等待队列
-		wake_up_interruptible(&dev->waitqueue);
-		if (dev->async_queue)
-			kill_fasync(&dev->async_queue, SIGIO, POLL_IN);
+		wake_up_interruptible(&aio_dev.waitqueue);
+		if (aio_dev.async_queue)	//发送信号，用来唤醒进程
+			kill_fasync(&aio_dev.async_queue, SIGIO, POLL_IN);
 	}
-	printk(KERN_CRIT "key_handler2");
 	return 0;
 }
 
 static int aio_fasync(int fd, struct file *filp, int mode)
 {
-	struct aio_device *dev = filp->private_data;
-	return fasync_helper(fd, filp, mode, &dev->async_queue);
+	//初始化fasync_struct结构体
+	return fasync_helper(fd, filp, mode, &aio_dev.async_queue);
 }
 
 int aio_open(struct inode *inode, struct file *filp)
 {
 	printk("-aio_open-\n");
-	filp->private_data = &aio_dev;
 	return 0;
 }
 ssize_t aio_read(struct file *filp, char __user *buf, size_t count, loff_t *fops)
 {
-	printk(KERN_CRIT "aio_read");
 	int ret = 0, key = 0;
-	struct aio_device *dev = filp->private_data;
-	ret = wait_event_interruptible(aio_dev.waitqueue, atomic64_read(&dev->state));
+	ret = wait_event_interruptible(aio_dev.waitqueue, atomic64_read(&aio_dev.state));
 	if (ret)
 		return ret;
 	//上面的队列被唤醒后，读取当前按键状态
-	key = atomic64_read(&dev->state);
+	key = atomic64_read(&aio_dev.state);
 	//发送到用户空间
 	ret = copy_to_user(buf, &key, sizeof(key));
 	if (ret)
 		return ret;
 	//将状态置0，等待下一次中断
-	atomic_set(&dev->state, 0);
+	atomic_set(&aio_dev.state, 0);
 	return 0;
 }
 int aio_close(struct inode *inode, struct file *filp)
@@ -81,28 +75,10 @@ int aio_close(struct inode *inode, struct file *filp)
 	return aio_fasync(-1, filp, 0);
 }
 
-static unsigned int aio_poll(struct file *filp, struct poll_table_struct *wait)
-{
-	printk(KERN_CRIT "aio_poll");
-	unsigned int mask = 0;
-
-	struct aio_device *dev = filp->private_data;
-
-	//设置poll
-	poll_wait(filp, &dev->waitqueue, wait);
-
-	if (atomic64_read(&dev->state) == 1) // 按键松开动作发生
-		mask = 1;
-	else
-		mask = 0;
-	return mask;
-}
-
 const struct file_operations aio_fops = {
 	.open = aio_open,
 	.read = aio_read,
 	.release = aio_close,
-	.poll = aio_poll,
 	.fasync = aio_fasync,
 };
 
@@ -189,7 +165,7 @@ static __init int aio_drv_init(void)
 
 static __exit void aio_drv_exit(void)
 {
-	printk("----^v^-----state drv v1 exit\n");
+	printk("-aio_drv_exit start-\n");
 
 	//释放中断
 	free_irq(aio_dev.irq, NULL);
@@ -203,6 +179,8 @@ static __exit void aio_drv_exit(void)
 	class_destroy(aio_dev.class);
 	//注销设备号
 	unregister_chrdev_region(aio_dev.devno, 1);
+
+	printk("-aio_drv_exit finish-\n");
 }
 
 //申明装载入口函数和卸载入口函数

@@ -14,12 +14,11 @@ static void aio_async_func()
 	int ret = 0, value = 0;
 	ret = read(fd, &value, sizeof(value));
 	if (ret < 0)
-	{
 		printf("read fail.\n");
-	}
 	if (value == 1)
 	{
 		printf("key value = %d\n", value);
+		value = 0;
 	}
 }
 
@@ -33,20 +32,16 @@ int main(void)
 		exit(1);
 	}
 
-	/* 指定信号 SIGIO，并绑定处理函数 */
+	//指定信号 SIGIO，并绑定处理函数
 	signal(SIGIO, aio_async_func);
-	/* 把当前线程指定为将接收信号的进程 */
+	//把当前线程指定为将接收信号的进程
 	fcntl(fd, F_SETOWN, getpid());
-	/* 获取当前线程状态 */
+	//获取当前线程状态
 	flag = fcntl(fd, F_GETFD);
-	/* 设置当前线程为 FASYNC 状态 */
+	//设置当前线程为 FASYNC 状态
 	fcntl(fd, F_SETFL, flag | FASYNC);
 
-	sleep(60);
-	/*for (int i = 0; i < 60; i++)
-	{
-		sleep(1);
-	}*/
+	sleep(15);
 
 	close(fd);
 	return 0;
