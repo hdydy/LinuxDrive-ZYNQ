@@ -74,7 +74,7 @@ static struct file_operations misc_fops = {
 };
 
 static struct miscdevice miscdev = {
-	.minor = 1,			   //次设备号
+	.minor = 11,			   //次设备号
 	.name = "misc_device", //设备名称
 	.fops = &misc_fops,	   //文件操作描述
 };
