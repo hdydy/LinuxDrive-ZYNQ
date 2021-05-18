@@ -29,48 +29,29 @@ struct input_device
 //中断下半部
 static void key_do_work(struct work_struct *work)
 {
-	printk(KERN_CRIT "key dowm irq headler!\n");
-	int flags;
-	struct input_device *dev = &input_dev;
-	/* value 用于获取按键值 */
-	unsigned char value;
+	//printk(KERN_CRIT "key dowm irq headler!\n");
+	//储存按键状态
+	int value;
 
-	/* 获取锁 */
-	//spin_lock_irqsave(&dev->lock, flags);
-	flags = atomic64_read(&input_dev.state);
+	//读取按键值
+	value = gpio_get_value(MIO_PIN_42);
+	//printk(KERN_CRIT "value = %d\n", value);
 
-	if (flags == 1)
-	{
-		/* 获取按键值 */
-		//value = gpio_get_value(dev->alinx_key_gpio);
-		value = gpio_get_value(MIO_PIN_42);
+	input_report_key(input_dev.inputdev, input_dev.code, !value);
+	input_sync(input_dev.inputdev);
 
-		if (value == 0)
-		{
-			/* 按键按下, 状态置 1 */
-			input_report_key(dev->inputdev, dev->code, 0);
-			input_sync(dev->inputdev);
-		}
-		else
-		{
-			/* 按键抬起 */
-			input_report_key(dev->inputdev, dev->code, 1);
-			input_sync(dev->inputdev);
-		}
-
-		/* 释放锁 */
-		//spin_unlock_irqrestore(&dev->lock, flags);
-		atomic_set(&input_dev.state, 0);
-		flags = 0;
-	}
+	//解锁
+	atomic_set(&input_dev.state, 0);
 }
 
 //中断上半部
 static irqreturn_t key_irq_handler(int irq, void *dev_id)
 {
-	printk(KERN_CRIT "key irq handler!\n");
-	//设置原子变量为1
-	atomic_set(&input_dev.state, 1);
+	//printk(KERN_CRIT "key irq handler!\n");
+	if (!atomic64_read(&input_dev.state)) //读取锁的状态
+		atomic_set(&input_dev.state, 1);  //把原子变量置1, 上锁
+	else
+		return -EBUSY; //若检测到已上锁，则返回设备忙
 	//唤起key_work工作队列
 	schedule_work(&input_dev.key_work);
 	return IRQ_HANDLED;
@@ -145,7 +126,7 @@ static __init int input_drv_init(void)
 	printk("irq = %d\n", input_dev.irq);
 
 	//申请中断
-	ret = request_irq(input_dev.irq, key_irq_handler, IRQF_TRIGGER_RISING, "input_key", NULL);
+	ret = request_irq(input_dev.irq, key_irq_handler, IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING, "input_key", NULL);
 	if (ret < 0)
 	{
 		printk("request_irq fail!\n");
@@ -165,12 +146,14 @@ static __exit void input_drv_exit(void)
 	cancel_work_sync(&input_dev.key_work);
 	//释放irq
 	free_irq(input_dev.irq, NULL);
+	/*
 	//删除设备
 	device_destroy(input_dev.class, input_dev.devno);
 	//删除类
 	class_destroy(input_dev.class);
 	//注销主设备号
 	unregister_chrdev(input_dev.devno, "input_device");
+	*/
 	/* 注销 input_dev 结构体变量 */
 	input_unregister_device(input_dev.inputdev);
 	/* 释放 input_dev 结构体变量 */
