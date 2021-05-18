@@ -4,7 +4,7 @@
 #include <linux/gpio.h>
 #include <linux/uaccess.h>
 #include <linux/interrupt.h>
-#include <linux/cdev.h>
+//#include <linux/cdev.h>
 #include <linux/atomic.h>
 #include <linux/input.h>
 
@@ -14,14 +14,14 @@
 //设置一个设备全局变量
 struct input_device
 {
-	dev_t devno;				 //设备号
-	struct cdev cdev;			 //字符设备
-	struct class *class;		 //设备类
-	struct device *device;		 //设备
+	//dev_t devno;				 //设备号
+	//struct cdev cdev;			 //字符设备
+	//struct class *class;		 //设备类
+	//struct device *device;		 //设备
 	atomic64_t state;			 //原子变量，此处用作按键状态
 	unsigned int irq;			 //中断
 	struct work_struct key_work; //工作队列
-	wait_queue_head_t waitqueue; //等待队列
+	//wait_queue_head_t waitqueue; //等待队列
 	struct input_dev *inputdev;	 //input_dev结构体
 	unsigned char code;			 //input事件码
 } input_dev;					 //定义一个全局的设备结构体
