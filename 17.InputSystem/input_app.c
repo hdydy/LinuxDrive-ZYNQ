@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
         {
         case EV_KEY:
             //按键事件
-            if (BUT_event.code == KEY_0) //识别事件码
+            if (BUT_event.code == KEY_0) //事件码
             {
                 if (BUT_event.value) //获得事件的传输值
                     printf("BUT1 Press.\n");

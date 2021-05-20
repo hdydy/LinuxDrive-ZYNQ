@@ -40,7 +40,7 @@ static void key_work(struct work_struct *work)
     input_sync(input_dev.inputdev);
 
     //解锁
-    atomic_set(&input_dev.state, 0);
+    atomic64_set(&input_dev.state, 0);
 }
 
 //中断上半部
@@ -48,7 +48,7 @@ static irqreturn_t key_irq_handler(int irq, void *dev_id)
 {
     //printk(KERN_CRIT "key irq handler!\n");
     if (!atomic64_read(&input_dev.state)) //读取锁的状态
-        atomic_set(&input_dev.state, 1);  //把原子变量置1, 上锁
+        atomic64_set(&input_dev.state, 1);  //把原子变量置1, 上锁
     else
         return -EBUSY; //若检测到已上锁，则返回设备忙
     //唤起key_work工作队列
@@ -93,7 +93,7 @@ static __init int input_drv_init(void)
     */
 
     //初始化原子变量
-    atomic_set(&input_dev.state, 0);
+    atomic64_set(&input_dev.state, 0);
 
     //设置事件码
     input_dev.code = KEY_0;
@@ -108,7 +108,7 @@ static __init int input_drv_init(void)
     //设置按键事件码
     __set_bit(KEY_0, input_dev.inputdev->keybit);
 
-    //注册 input_dev 结构体变量
+    //注册input_dev结构体变量
     ret = input_register_device(input_dev.inputdev);
     if (ret)
     {
