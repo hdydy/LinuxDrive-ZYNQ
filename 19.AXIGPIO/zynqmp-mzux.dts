@@ -1,0 +1,327 @@
+/dts-v1/;
+#include "zynqmp.dtsi"
+#include "zynqmp-clk-ccf.dtsi"
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/pinctrl-zynqmp.h>
+#include <dt-bindings/phy/phy.h>
+
+/ {
+	model = "UISRC.COM MZU03B";
+	compatible = "uisrc,mzu03b",
+				"xlnx,zynqmp-zcu100-revC", "xlnx,zynqmp-zcu100",
+				"xlnx,zynqmp";
+
+	aliases {
+		ethernet0 = &gem3;
+		rtc0 = &rtc;
+		i2c0 = &i2c0;
+		serial0 = &uart0;
+		serial1 = &uart1;
+		spi0 = &qspi;
+		usb0 = &usb0;
+		mmc0 = &sdhci0;
+		mmc1 = &sdhci1;
+	};
+
+	chosen {
+		bootargs = "earlycon clk_ignore_unused";
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x0 0x0 0x7ff00000>, <0x00000008 0x00000000 0x0 0x80000000>;
+	};
+
+	ltc2954: ltc2954 { /* U7 */
+		compatible = "lltc,ltc2954", "lltc,ltc2952";
+		status = "enable";
+		trigger-gpios = <&gpio 26 GPIO_ACTIVE_LOW>; /* INT line - input */
+		/* If there is HW watchdog on mezzanine this signal should be connected there */
+		/*watchdog-gpios = <&gpio 35 GPIO_ACTIVE_HIGH>;  MIO on PAD */
+		kill-gpios = <&gpio 37 GPIO_ACTIVE_LOW>; /* KILL signal - output */
+	};
+
+	gpio-led {
+		compatible = "xlnx,zynqmp-led-1.0";
+		gpios = <	&axi_gpio_0 0x0 0x0 
+					&axi_gpio_0 0x4 0x0 
+					&axi_gpio_0 0x8 0x0 
+					&axi_gpio_0 0xC 0x0 >;
+    };
+};
+
+/ {
+	amba_pl: amba_pl@0 {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "simple-bus";
+		ranges ;
+		axi_gpio_0: gpio@80000000 {
+			#gpio-cells = <3>;
+			#interrupt-cells = <2>;
+			clock-names = "s_axi_aclk";
+			clocks = <&zynqmp_clk 71>;
+			compatible = "xlnx,axi-gpio-2.0", "xlnx,xps-gpio-1.00.a";
+			gpio-controller ;
+			interrupt-controller ;
+			interrupt-names = "ip2intc_irpt";
+			interrupt-parent = <&gic>;
+			interrupts = <0 89 4>;
+			reg = <0x0 0x80000000 0x0 0x10000>;
+			xlnx,all-inputs = <0x0>;
+			xlnx,all-inputs-2 = <0x0>;
+			xlnx,all-outputs = <0x0>;
+			xlnx,all-outputs-2 = <0x0>;
+			xlnx,dout-default = <0x00000000>;
+			xlnx,dout-default-2 = <0x00000000>;
+			xlnx,gpio-width = <0x4>;
+			xlnx,gpio2-width = <0x4>;
+			xlnx,interrupt-present = <0x1>;
+			xlnx,is-dual = <0x1>;
+			xlnx,tri-default = <0xFFFFFFFF>;
+			xlnx,tri-default-2 = <0xFFFFFFFF>;
+		};
+	};
+};
+
+&gem3 {
+	status = "okay";
+	phy-mode = "rgmii-id";
+	phy-handle = <&phy0>;
+	phy0: ethernet-phy@1 {
+		reg = <1>;
+	};
+};
+
+&fpd_dma_chan1 {
+	status = "okay";
+};
+
+&fpd_dma_chan2 {
+	status = "okay";
+};
+
+&fpd_dma_chan3 {
+	status = "okay";
+};
+
+&fpd_dma_chan4 {
+	status = "okay";
+};
+
+&fpd_dma_chan5 {
+	status = "okay";
+};
+
+&fpd_dma_chan6 {
+	status = "okay";
+};
+
+&fpd_dma_chan7 {
+	status = "okay";
+};
+
+&fpd_dma_chan8 {
+	status = "okay";
+};
+
+&gpio {
+	emio-gpio-width = <32>;
+	gpio-mask-high = <0x0>;
+	gpio-mask-low = <0x5600>;
+	status = "okay";
+};
+
+&gpu {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <400000>;
+	scl-gpios = <&gpio 38 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
+
+	rtc@68 {
+		compatible = "dallas,ds1337";
+		reg = <0x68>;
+	};
+
+	eeprom@50 {
+		compatible = "atmel,24c02";
+		///compatible = "at24,24c02";
+		reg = <0x50>;
+	};
+};
+
+&qspi {
+	status = "okay";
+	is-dual = <0>;
+	num-cs = <1>;
+	flash@0 {
+		compatible = "m25p80", "jedec,spi-nor"; /* 32MB */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x0>;
+		spi-rx-bus-width = <4>;
+		spi-tx-bus-width = <4>;
+		spi-max-frequency = <108000000>;
+	};
+};
+
+&rtc {
+	status = "okay";
+};
+
+&sata {
+	ceva,p0-burst-params = /bits/ 8 <0x13 0x08 0x4A 0x06>;
+	ceva,p0-cominit-params = /bits/ 8 <0x18 0x40 0x18 0x28>;
+	ceva,p0-comwake-params = /bits/ 8 <0x06 0x14 0x08 0x0E>;
+	ceva,p0-retry-params = /bits/ 16 <0x96A4 0x3FFC>;
+	ceva,p1-burst-params = /bits/ 8 <0x13 0x08 0x4A 0x06>;
+	ceva,p1-cominit-params = /bits/ 8 <0x18 0x40 0x18 0x28>;
+	ceva,p1-comwake-params = /bits/ 8 <0x06 0x14 0x08 0x0E>;
+	ceva,p1-retry-params = /bits/ 16 <0x96A4 0x3FFC>;
+	status = "okay";
+};
+
+&sdhci0 {
+	clock-frequency = <187000000>;
+	status = "okay";
+	xlnx,mio_bank = <0x0>;
+	bus-width = <8>;
+	non-removable;
+	disable-wp;	
+};
+
+&sdhci1 {
+	clock-frequency = <100000000>;
+	status = "okay";
+	xlnx,mio_bank = <0x1>;
+	no-1-8-v;
+	disable-wp;
+};
+
+&serdes {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	u-boot,dm-pre-reloc ;
+};
+
+&uart1 {
+	status = "okay";
+};
+
+/* ULPI SMSC USB3320 */
+&usb0 {
+	status = "okay";
+	xlnx,usb-polarity = <0x0>;
+	xlnx,usb-reset-mode = <0x0>;
+};
+
+&dwc3_0 {
+	status = "okay";
+	dr_mode = "host";
+};
+
+&lpd_watchdog {
+	status = "okay";
+};
+
+&watchdog0 {
+	status = "okay";
+};
+
+&pss_ref_clk {
+	clock-frequency = <33333333>;
+};
+
+&ams_ps {
+	status = "okay";
+};
+
+&ams_pl {
+	status = "okay";
+};
+
+&gic {
+	num_cpus = <2>;
+	num_interrupts = <96>;
+};
+
+&lpd_dma_chan1 {
+	status = "okay";
+};
+
+&lpd_dma_chan2 {
+	status = "okay";
+};
+
+&lpd_dma_chan3 {
+	status = "okay";
+};
+
+&lpd_dma_chan4 {
+	status = "okay";
+};
+
+&lpd_dma_chan5 {
+	status = "okay";
+};
+
+&lpd_dma_chan6 {
+	status = "okay";
+};
+
+&lpd_dma_chan7 {
+	status = "okay";
+};
+
+&lpd_dma_chan8 {
+	status = "okay";
+};
+
+&xilinx_ams {
+	status = "okay";
+};
+
+&can0 {
+	status = "okay";
+};
+
+&can1 {
+	status = "okay";
+};
+
+&zynqmp_dpsub {
+	phy-names = "dp-phy0","dp-phy1";
+	phys = <&lane1 6 0 1 27000000>, <&lane0 6 1 1 27000000>;
+	status = "okay";
+	xlnx,max-lanes = <2>;
+};
+
+&zynqmp_dp_snd_pcm0 {
+	status = "okay";
+};
+
+&zynqmp_dp_snd_pcm1 {
+	status = "okay";
+};
+
+&zynqmp_dp_snd_card0 {
+	status = "okay";
+};
+
+&zynqmp_dp_snd_codec0 {
+	status = "okay";
+};
+
+&xlnx_dpdma {
+	status = "okay";
+};
