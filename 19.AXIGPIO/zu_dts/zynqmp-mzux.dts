@@ -43,14 +43,6 @@
 		/*watchdog-gpios = <&gpio 35 GPIO_ACTIVE_HIGH>;  MIO on PAD */
 		kill-gpios = <&gpio 37 GPIO_ACTIVE_LOW>; /* KILL signal - output */
 	};
-
-	gpio-led {
-		compatible = "xlnx,zynqmp-led-1.0";
-		gpios = <	&axi_gpio_0 0x0 0x0 
-					&axi_gpio_0 0x4 0x0 
-					&axi_gpio_0 0x8 0x0 
-					&axi_gpio_0 0xC 0x0 >;
-    };
 };
 
 / {
