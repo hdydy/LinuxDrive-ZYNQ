@@ -1,6 +1,6 @@
 /**
  * @file gpio_reg.h
- * @author your name (you@domain.com)
+ * @author makai (makai@milianke.com)
  * @brief The header of gpio_reg_drv.c. i is the pin number of a GPIO. 
  *        In CMD_SET_DIRECTION(i), int should be the direction of a GPIO. 
  *        0 means input, 1 means output.
