@@ -186,11 +186,20 @@ static inline int GPIO_INIT(unsigned long pin_num, unsigned long direction)
 	GET_BANK_PIN(pin_num, &bank_num, &bank_pin_num);
 	if (0 <= pin_num && pin_num <= 77)
 		ret = MIO_INIT(pin_num, bank_num, bank_pin_num);
-
-	// Set direction
-	iowrite32((ioread32(ZYNQ_GPIO_DIRM_OFFSET(bank_num)) | (direction << bank_pin_num)), ZYNQ_GPIO_DIRM_OFFSET(bank_num));
-	// Enable MIO
-	iowrite32((ioread32(ZYNQ_GPIO_OEN_OFFSET(bank_num)) | (direction << bank_pin_num)), ZYNQ_GPIO_OEN_OFFSET(bank_num));
+	if (value)
+	{
+		// Set direction to OUT
+		iowrite32((ioread32(ZYNQ_GPIO_DIRM_OFFSET(bank_num)) | (1 << bank_pin_num)), ZYNQ_GPIO_DIRM_OFFSET(bank_num));
+		// Output enable
+		iowrite32((ioread32(ZYNQ_GPIO_OEN_OFFSET(bank_num)) | (1 << bank_pin_num)), ZYNQ_GPIO_OEN_OFFSET(bank_num));
+	}
+	else
+	{
+		// Set direction to IN
+		iowrite32((ioread32(ZYNQ_GPIO_DIRM_OFFSET(bank_num)) & ~(1 << bank_pin_num)), ZYNQ_GPIO_DIRM_OFFSET(bank_num));
+		// Output disable
+		iowrite32((ioread32(ZYNQ_GPIO_OEN_OFFSET(bank_num)) & ~(1 << bank_pin_num)), ZYNQ_GPIO_OEN_OFFSET(bank_num));
+	}
 	IO_STAT_LIST[pin_num][0] = 1;
 	IO_STAT_LIST[pin_num][1] = direction;
 
