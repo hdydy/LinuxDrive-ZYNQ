@@ -1,6 +1,6 @@
 /**
  * @file gpio_reg_drv.c
- * @author makai (makai@milianke.com)
+ * @author
  * @brief The drive to control GPIO base on register.
  * @version 0.1
  * @date 2023-11-10
@@ -153,7 +153,7 @@ static inline int MIO_INIT(unsigned long pin_num, unsigned int bank_num, unsigne
 	iowrite32((ioread32(ZYNQ_GPIO_CTRL1(bank_num)) | (1 << bank_pin_num)), ZYNQ_GPIO_CTRL1(bank_num));
 
 	//  CMOS input type control.
-	iowrite32((ioread32(ZYNQ_GPIO_CTRL3(bank_num)) & (0 << bank_pin_num)), ZYNQ_GPIO_CTRL3(bank_num));
+	iowrite32((ioread32(ZYNQ_GPIO_CTRL3(bank_num)) & ~(1 << bank_pin_num)), ZYNQ_GPIO_CTRL3(bank_num));
 
 	// Pull up/down select.
 	iowrite32((ioread32(ZYNQ_GPIO_CTRL4(bank_num)) | (1 << bank_pin_num)), ZYNQ_GPIO_CTRL4(bank_num));
@@ -161,7 +161,7 @@ static inline int MIO_INIT(unsigned long pin_num, unsigned int bank_num, unsigne
 	iowrite32((ioread32(ZYNQ_GPIO_CTRL5(bank_num)) | (1 << bank_pin_num)), ZYNQ_GPIO_CTRL5(bank_num));
 
 	// Output slew rate select.
-	iowrite32((ioread32(ZYNQ_GPIO_CTRL6(bank_num)) & (0 << bank_pin_num)), ZYNQ_GPIO_CTRL6(bank_num));
+	iowrite32((ioread32(ZYNQ_GPIO_CTRL6(bank_num)) & ~(1 << bank_pin_num)), ZYNQ_GPIO_CTRL6(bank_num));
 	return 0;
 }
 
@@ -228,9 +228,9 @@ static inline int GPIO_SET_VALUE(unsigned int pin_num, unsigned long value)
 		return -EINVAL;
 	GET_BANK_PIN(pin_num, &bank_num, &bank_pin_num);
 	if (value)
-		iowrite32((ioread32(ZYNQ_GPIO_DATA_OFFSET(bank_num)) | (value << bank_pin_num)), ZYNQ_GPIO_DATA_OFFSET(bank_num));
+		iowrite32((ioread32(ZYNQ_GPIO_DATA_OFFSET(bank_num)) | (1 << bank_pin_num)), ZYNQ_GPIO_DATA_OFFSET(bank_num));
 	else
-		iowrite32((ioread32(ZYNQ_GPIO_DATA_OFFSET(bank_num)) & (value << bank_pin_num)), ZYNQ_GPIO_DATA_OFFSET(bank_num));
+		iowrite32((ioread32(ZYNQ_GPIO_DATA_OFFSET(bank_num)) & ~(1 << bank_pin_num)), ZYNQ_GPIO_DATA_OFFSET(bank_num));
 	return 0;
 }
 
@@ -251,14 +251,14 @@ static inline void GPIO_RESET(void)
 			{
 				iowrite32((ioread32(GPIO_PIN_(i)) & 0x0), GPIO_PIN_(i));
 				iowrite32((ioread32(ZYNQ_GPIO_CTRL0(bank_num)) | (1 << bank_pin_num)), ZYNQ_GPIO_CTRL0(bank_num));
-				iowrite32((ioread32(ZYNQ_GPIO_CTRL1(bank_num)) & (0 << bank_pin_num)), ZYNQ_GPIO_CTRL1(bank_num));
-				iowrite32((ioread32(ZYNQ_GPIO_CTRL3(bank_num)) & (0 << bank_pin_num)), ZYNQ_GPIO_CTRL3(bank_num));
+				iowrite32((ioread32(ZYNQ_GPIO_CTRL1(bank_num)) & ~(1 << bank_pin_num)), ZYNQ_GPIO_CTRL1(bank_num));
+				iowrite32((ioread32(ZYNQ_GPIO_CTRL3(bank_num)) & ~(1 << bank_pin_num)), ZYNQ_GPIO_CTRL3(bank_num));
 				iowrite32((ioread32(ZYNQ_GPIO_CTRL4(bank_num)) | (1 << bank_pin_num)), ZYNQ_GPIO_CTRL4(bank_num));
 				iowrite32((ioread32(ZYNQ_GPIO_CTRL5(bank_num)) | (1 << bank_pin_num)), ZYNQ_GPIO_CTRL5(bank_num));
-				iowrite32((ioread32(ZYNQ_GPIO_CTRL6(bank_num)) & (0 << bank_pin_num)), ZYNQ_GPIO_CTRL6(bank_num));
+				iowrite32((ioread32(ZYNQ_GPIO_CTRL6(bank_num)) & ~(1 << bank_pin_num)), ZYNQ_GPIO_CTRL6(bank_num));
 			}
-			iowrite32((ioread32(ZYNQ_GPIO_DIRM_OFFSET(bank_num)) & (0 << bank_pin_num)), ZYNQ_GPIO_DIRM_OFFSET(bank_num));
-			iowrite32((ioread32(ZYNQ_GPIO_OEN_OFFSET(bank_num)) & (0 << bank_pin_num)), ZYNQ_GPIO_OEN_OFFSET(bank_num));
+			iowrite32((ioread32(ZYNQ_GPIO_DIRM_OFFSET(bank_num)) & ~(1 << bank_pin_num)), ZYNQ_GPIO_DIRM_OFFSET(bank_num));
+			iowrite32((ioread32(ZYNQ_GPIO_OEN_OFFSET(bank_num)) & ~(1 << bank_pin_num)), ZYNQ_GPIO_OEN_OFFSET(bank_num));
 			IO_STAT_LIST[i][0] = 0;
 			IO_STAT_LIST[i][1] = 0;
 		}
@@ -282,6 +282,11 @@ static long gpio_reg_ioctl(struct file *file, unsigned int cmd, unsigned long ar
 	if (_IOC_TYPE(cmd) != CMD_IOC_INIT_MAGIC && _IOC_TYPE(cmd) != CMD_IOC_I_MAGIC && _IOC_TYPE(cmd) != CMD_IOC_O_MAGIC)
 	{
 		pr_err("%s: command type [%c] error.\n", __func__, _IOC_TYPE(cmd));
+		return -ENOTTY;
+	}
+	if ((_IOC_TYPE(cmd) == CMD_IOC_INIT_MAGIC || _IOC_TYPE(cmd) == CMD_IOC_O_MAGIC) && (arg != 0 && arg != 1))
+	{
+		pr_err("%s: command arg [%ld] error.\n", __func__, arg);
 		return -ENOTTY;
 	}
 
