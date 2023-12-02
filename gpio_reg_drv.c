@@ -186,7 +186,7 @@ static inline int GPIO_INIT(unsigned long pin_num, unsigned long direction)
 	GET_BANK_PIN(pin_num, &bank_num, &bank_pin_num);
 	if (0 <= pin_num && pin_num <= 77)
 		ret = MIO_INIT(pin_num, bank_num, bank_pin_num);
-	if (value)
+	if (direction)
 	{
 		// Set direction to OUT
 		iowrite32((ioread32(ZYNQ_GPIO_DIRM_OFFSET(bank_num)) | (1 << bank_pin_num)), ZYNQ_GPIO_DIRM_OFFSET(bank_num));
